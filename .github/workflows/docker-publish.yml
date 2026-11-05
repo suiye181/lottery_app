@@ -6,7 +6,7 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: Docker-latest
+    runs-on: AIlottery-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
