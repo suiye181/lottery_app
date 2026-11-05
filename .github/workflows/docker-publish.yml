@@ -2,12 +2,11 @@ name: Build and Push Docker Image
 
 on:
   push:
-    branches:
-      - main  # 如果你的主分支名叫 master，请修改此处
+    branches: [ main ]
 
 jobs:
   build-and-push:
-    runs-on: Docker-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
