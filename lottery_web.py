@@ -3,32 +3,75 @@ import random, requests, itertools, math, json, os, datetime, time
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-st.set_page_config(page_title="智能彩票系统 22.2 多用户版", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="智能彩票系统 22.3 喜庆3D版", page_icon="🎰", layout="centered")
 
-# ================= 注入桌面级 UI CSS 样式 =================
+# ================= 全局 3D 喜庆红 CSS 引擎 =================
 st.markdown("""
 <style>
-.stApp { background-color: #F2F4F7; }
+/* 强制浅色喜庆底色，彻底修复深色模式白底白字问题 */
+[data-testid="stAppViewContainer"] {
+    background-color: #FFF5F5 !important;
+}
+[data-testid="stHeader"] { background-color: transparent !important; }
+
+/* 主体容器变成悬浮 3D 柔和红光卡片 */
 .block-container { 
-    background-color: #FFFFFF; 
-    border-radius: 12px; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
-    padding-top: 2rem; 
-    padding-bottom: 2rem; 
-    margin-top: 2rem;
+    background-color: #FFFFFF !important; 
+    border-radius: 16px; 
+    box-shadow: 0 10px 30px rgba(231, 76, 60, 0.12) !important; 
+    border: 1px solid #FADBD8;
+    padding-top: 2rem !important; 
+    padding-bottom: 2rem !important; 
+    margin-top: 1rem;
 }
-.stTabs [data-baseweb="tab-list"] { gap: 8px; }
+
+/* 全局强行覆盖字体颜色，防止白字隐形 */
+h1, h2, h3, h4, h5, h6, p, span, label, div {
+    color: #2C3E50; 
+}
+/* 但要保护 3D 球内部的文字必须是白色的 */
+.ball, .ball * { color: #FFFFFF !important; }
+
+/* 🔴 核心：真·3D 红宝石互动按钮 */
+.stButton > button {
+    background: linear-gradient(145deg, #FF6B6B, #E74C3C) !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 10px !important;
+    box-shadow: 0 5px 0 #C0392B, 0 8px 15px rgba(231, 76, 60, 0.4) !important;
+    transition: all 0.1s !important;
+    font-weight: bold !important;
+    padding: 0.5rem 1rem !important;
+}
+/* 3D 按钮按压下沉反馈 */
+.stButton > button:active {
+    transform: translateY(5px) !important;
+    box-shadow: 0 0px 0 #C0392B, 0 2px 5px rgba(231, 76, 60, 0.4) !important;
+}
+.stButton > button * { color: #FFFFFF !important; }
+
+/* 🔴 核心：3D 喜庆选项卡 */
+.stTabs [data-baseweb="tab-list"] { 
+    gap: 12px; background-color: transparent; padding-bottom: 10px; 
+}
 .stTabs [data-baseweb="tab"] { 
-    background-color: #34495E; 
-    color: #ECF0F1; 
-    border-radius: 8px 8px 0px 0px; 
-    padding: 10px 15px; 
-    font-weight: bold;
+    background-color: #FADBD8 !important; 
+    color: #922B21 !important; 
+    border-radius: 8px !important; 
+    padding: 8px 16px; 
+    border: 1px solid #F5B7B1 !important;
+    box-shadow: 0 4px 0 #E6B0AA !important;
+    transition: all 0.2s;
 }
+/* 被选中的选项卡：红宝石色并下陷 */
 .stTabs [aria-selected="true"] { 
-    background-color: #2980B9 !important; 
+    background: linear-gradient(145deg, #E74C3C, #C0392B) !important; 
     color: white !important; 
+    box-shadow: 0 2px 0 #922B21, 0 4px 8px rgba(231,76,60,0.3) !important;
+    border: none !important;
+    transform: translateY(2px);
 }
+.stTabs [aria-selected="true"] * { color: white !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -41,21 +84,20 @@ def load_users():
     except: return {"admin": "admin"}
 
 def save_users(users_dict):
-    with open(USER_FILE, "w", encoding="utf-8") as f:
-        json.dump(users_dict, f, ensure_ascii=False, indent=2)
+    with open(USER_FILE, "w", encoding="utf-8") as f: json.dump(users_dict, f, ensure_ascii=False, indent=2)
 
 if not os.path.exists(USER_FILE): save_users({"admin": "admin"})
 
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    st.markdown("<h2 style='text-align: center; color: #2C3E50; margin-bottom: 20px;'>🔐 彩票分析与投注系统</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #E74C3C; margin-bottom: 20px; font-weight: bold;'>🧧 彩票分析与投注系统</h2>", unsafe_allow_html=True)
     tab_login, tab_reg = st.tabs(["🔑 登录系统", "📝 注册新账号"])
     
     with tab_login:
         username = st.text_input("用户名", key="login_user")
         password = st.text_input("密码", type="password", key="login_pwd")
-        if st.button("登录", type="primary", use_container_width=True):
+        if st.button("🚀 立 刻 登 录", type="primary", use_container_width=True):
             users = load_users()
             if users.get(username) == password:
                 st.session_state.logged_in = True; st.session_state.current_user = username; st.rerun()
@@ -65,7 +107,7 @@ if not st.session_state.logged_in:
         reg_user = st.text_input("设置用户名", key="reg_user")
         reg_pwd1 = st.text_input("设置密码", type="password", key="reg_pwd1")
         reg_pwd2 = st.text_input("确认密码", type="password", key="reg_pwd2")
-        if st.button("立即注册", use_container_width=True):
+        if st.button("📝 立 刻 注 册", use_container_width=True):
             users = load_users()
             if not reg_user or not reg_pwd1: st.error("用户名和密码不能为空！")
             elif reg_user in users: st.error("此用户名已被注册，请换一个！")
@@ -77,7 +119,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 with st.sidebar:
-    st.markdown(f"👤 当前用户: **{st.session_state.current_user}**")
+    st.markdown(f"### 👤 当前用户: <span style='color:#E74C3C;'>{st.session_state.current_user}</span>", unsafe_allow_html=True)
     with st.expander("⚙️ 修改密码"):
         old_p = st.text_input("原密码", type="password", key="old_p")
         new_p1 = st.text_input("新密码", type="password", key="new_p1")
@@ -185,10 +227,11 @@ def eval_dlt(r, b):
     if r == 3 and b == 0 or r == 1 and b == 2 or r == 2 and b == 1 or r == 0 and b == 2: return 5
     return 0
 
+# 核心 3D CSS 绝对居中引擎 (保留纯白字体)
 def render_balls(reds, blues, dans=None, tuos=None):
     css = """
     <style>
-    .ball { display: inline-flex; justify-content: center; align-items: center; width: 34px; height: 34px; border-radius: 50%; color: white; font-weight: bold; margin: 3px; font-size: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
+    .ball { display: inline-flex; justify-content: center; align-items: center; width: 34px; height: 34px; border-radius: 50%; font-weight: bold; margin: 3px; font-size: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); }
     .ball-red { background: radial-gradient(circle at 30% 30%, #F5B7B1, #E74C3C, #922B21); }
     .ball-blue { background: radial-gradient(circle at 30% 30%, #AED6F6, #3498DB, #154360); }
     .ball-dan { background: radial-gradient(circle at 30% 30%, #E6B0AA, #C0392B, #641E16); }
@@ -219,7 +262,7 @@ g, g_name = st.session_state.game, "双色球" if st.session_state.game == "ssq"
 engine = LotteryEngine(g, set(tuple(v["red"]) + tuple(v["blue"]) for v in history_dict.get(g, {}).values()))
 
 if history_list[g]:
-    st.info(f"🏆 {g_name} 上期开奖 (第 {history_list[g][0]['issue']} 期):")
+    st.markdown(f"<div style='text-align: center; color: #E74C3C; font-weight: bold; margin-bottom: 10px;'>🏆 {g_name} 上期开奖 (第 {history_list[g][0]['issue']} 期):</div>", unsafe_allow_html=True)
     st.markdown(render_balls(history_list[g][0]['red'], history_list[g][0]['blue']), unsafe_allow_html=True)
 
 tab_main, tab_manual, tab_scan, tab_ticket, tab_trend, tab_history = st.tabs(["🎰 机选投注", "✍️ 手动", "📷 扫票", "🧾 订单", "📈 走势", "🏆 历史"])
@@ -252,12 +295,12 @@ with tab_main:
             except: st.error("胆码输入有误")
 
     if st.session_state.current_batch:
-        st.write("---")
+        st.markdown("<hr style='border:1px dashed #FADBD8;'>", unsafe_allow_html=True)
         for bet in st.session_state.current_batch:
             if bet["mode"] == "胆拖": st.markdown(render_balls([], bet["blue"], bet["dan"], bet["tuo"]), unsafe_allow_html=True)
             else: st.markdown(render_balls(bet["red"], bet["blue"]), unsafe_allow_html=True)
         
-        st.markdown(f"<h3 style='text-align: center; color: #E74C3C;'>当前机选总金额: {st.session_state.pending_order['cost']} 元</h3>", unsafe_allow_html=True)
+        st.markdown(f"<h3 style='text-align: center; color: #E74C3C; margin: 15px 0;'>当前机选总计: {st.session_state.pending_order['cost']} 元</h3>", unsafe_allow_html=True)
         
         if st.button("🛒 确认购买并入库", type="primary", use_container_width=True):
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
@@ -281,7 +324,7 @@ with tab_manual:
             mode = "单选" if tickets == 1 else "复式"
     except: pass
 
-    st.markdown(f"<h3 style='text-align: center; color: #E74C3C;'>实时计算金额: {t_cost} 元</h3>", unsafe_allow_html=True)
+    st.markdown(f"<h3 style='text-align: center; color: #E74C3C; margin: 15px 0;'>实时金额: {t_cost} 元</h3>", unsafe_allow_html=True)
     
     if st.button("💾 确认生成并入库", type="primary", use_container_width=True):
         if t_cost > 0:
@@ -293,7 +336,7 @@ with tab_manual:
 
 # ================= Tab 3: 扫票入库 =================
 with tab_scan:
-    st.warning("📱 建议使用手机浏览器打开本页面以调用高清摄像头。")
+    st.markdown("<div style='color:#E67E22; background:#FDEBD0; padding:10px; border-radius:5px; margin-bottom:15px;'>📱 建议使用手机浏览器打开本页面以调用高清摄像头。</div>", unsafe_allow_html=True)
     img_buffer = st.camera_input("📸 拍下实体彩票即可入库")
     if img_buffer:
         with st.spinner("OCR 深度解析中..."):
@@ -327,12 +370,11 @@ with tab_ticket:
             st.success("🎉 核算完成！")
             
     if os.path.exists(TICKET_FILE):
-        # 仅筛选属于当前用户的、且对应当前彩种的订单
         all_records = json.load(open(TICKET_FILE, "r", encoding="utf-8"))
         records = [r for r in all_records if r["game"] == g and r.get("user", "admin") == st.session_state.current_user]
         
         t_cost, t_prize = sum(r["total_cost"] for r in records), sum(r.get("prize", 0) for r in records)
-        st.markdown(f"**个人财务总计 ➔ 投入: {t_cost} | 奖金: {t_prize} | 盈亏: {t_prize - t_cost} 元**")
+        st.markdown(f"**个人财务总计 ➔ 投入: {t_cost} | 奖金: {t_prize} | 盈亏: <span style='color:#E74C3C;'>{t_prize - t_cost}</span> 元**", unsafe_allow_html=True)
         
         for r in reversed(records):
             profit = r.get("prize",0) - r["total_cost"]
@@ -378,4 +420,4 @@ with tab_history:
         for item in history_list[g]:
             st.markdown(f"**第 {item['issue']} 期**")
             st.markdown(render_balls(item['red'], item['blue']), unsafe_allow_html=True)
-            st.divider()
+            st.markdown("<hr style='border: 1px dashed #FADBD8;'>", unsafe_allow_html=True)
