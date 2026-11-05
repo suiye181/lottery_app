@@ -3,30 +3,98 @@ import random, requests, itertools, math, json, os, datetime, time
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-st.set_page_config(page_title="智能彩票系统 22.0 Docker版", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="智能彩票系统 22.2 多用户版", page_icon="🎰", layout="centered")
+
+# ================= 注入桌面级 UI CSS 样式 =================
+st.markdown("""
+<style>
+.stApp { background-color: #F2F4F7; }
+.block-container { 
+    background-color: #FFFFFF; 
+    border-radius: 12px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08); 
+    padding-top: 2rem; 
+    padding-bottom: 2rem; 
+    margin-top: 2rem;
+}
+.stTabs [data-baseweb="tab-list"] { gap: 8px; }
+.stTabs [data-baseweb="tab"] { 
+    background-color: #34495E; 
+    color: #ECF0F1; 
+    border-radius: 8px 8px 0px 0px; 
+    padding: 10px 15px; 
+    font-weight: bold;
+}
+.stTabs [aria-selected="true"] { 
+    background-color: #2980B9 !important; 
+    color: white !important; 
+}
+</style>
+""", unsafe_allow_html=True)
 
 TICKET_FILE = "my_tickets.json"
 USER_FILE = "users.json"
 
-# ================= 账号验证模块 =================
-if not os.path.exists(USER_FILE):
-    with open(USER_FILE, "w", encoding="utf-8") as f: json.dump({"admin": "admin"}, f)
+# ================= 账号验证与多用户管理模块 =================
+def load_users():
+    try: return json.load(open(USER_FILE, "r", encoding="utf-8"))
+    except: return {"admin": "admin"}
+
+def save_users(users_dict):
+    with open(USER_FILE, "w", encoding="utf-8") as f:
+        json.dump(users_dict, f, ensure_ascii=False, indent=2)
+
+if not os.path.exists(USER_FILE): save_users({"admin": "admin"})
 
 if "logged_in" not in st.session_state: st.session_state.logged_in = False
+
 if not st.session_state.logged_in:
-    st.title("🔐 系统登录")
-    username = st.text_input("用户名")
-    password = st.text_input("密码", type="password")
-    if st.button("登录系统", type="primary", use_container_width=True):
-        users = json.load(open(USER_FILE, "r", encoding="utf-8"))
-        if username in users and users[username] == password:
-            st.session_state.logged_in = True; st.session_state.current_user = username; st.rerun()
-        else: st.error("账密错误！")
+    st.markdown("<h2 style='text-align: center; color: #2C3E50; margin-bottom: 20px;'>🔐 彩票分析与投注系统</h2>", unsafe_allow_html=True)
+    tab_login, tab_reg = st.tabs(["🔑 登录系统", "📝 注册新账号"])
+    
+    with tab_login:
+        username = st.text_input("用户名", key="login_user")
+        password = st.text_input("密码", type="password", key="login_pwd")
+        if st.button("登录", type="primary", use_container_width=True):
+            users = load_users()
+            if users.get(username) == password:
+                st.session_state.logged_in = True; st.session_state.current_user = username; st.rerun()
+            else: st.error("用户名或密码错误！")
+            
+    with tab_reg:
+        reg_user = st.text_input("设置用户名", key="reg_user")
+        reg_pwd1 = st.text_input("设置密码", type="password", key="reg_pwd1")
+        reg_pwd2 = st.text_input("确认密码", type="password", key="reg_pwd2")
+        if st.button("立即注册", use_container_width=True):
+            users = load_users()
+            if not reg_user or not reg_pwd1: st.error("用户名和密码不能为空！")
+            elif reg_user in users: st.error("此用户名已被注册，请换一个！")
+            elif reg_pwd1 != reg_pwd2: st.error("两次输入的密码不一致！")
+            else:
+                users[reg_user] = reg_pwd1
+                save_users(users)
+                st.success("✅ 注册成功！请切换到【登录系统】标签页进行登录。")
     st.stop()
 
 with st.sidebar:
     st.markdown(f"👤 当前用户: **{st.session_state.current_user}**")
-    if st.button("🚪 退出登录"): st.session_state.logged_in = False; st.rerun()
+    with st.expander("⚙️ 修改密码"):
+        old_p = st.text_input("原密码", type="password", key="old_p")
+        new_p1 = st.text_input("新密码", type="password", key="new_p1")
+        new_p2 = st.text_input("确认新密码", type="password", key="new_p2")
+        if st.button("确认修改", use_container_width=True):
+            users = load_users()
+            if users.get(st.session_state.current_user) != old_p: st.error("原密码错误！")
+            elif not new_p1: st.error("新密码不能为空！")
+            elif new_p1 != new_p2: st.error("两次新密码不一致！")
+            else:
+                users[st.session_state.current_user] = new_p1
+                save_users(users)
+                st.success("✅ 密码修改成功！下次请使用新密码登录。")
+    st.markdown("---")
+    if st.button("🚪 退出当前账号", use_container_width=True): 
+        st.session_state.logged_in = False
+        st.rerun()
 
 # ================= 核心算法引擎 =================
 class LotteryEngine:
@@ -117,7 +185,6 @@ def eval_dlt(r, b):
     if r == 3 and b == 0 or r == 1 and b == 2 or r == 2 and b == 1 or r == 0 and b == 2: return 5
     return 0
 
-# 核心 3D CSS 绝对居中引擎
 def render_balls(reds, blues, dans=None, tuos=None):
     css = """
     <style>
@@ -155,7 +222,7 @@ if history_list[g]:
     st.info(f"🏆 {g_name} 上期开奖 (第 {history_list[g][0]['issue']} 期):")
     st.markdown(render_balls(history_list[g][0]['red'], history_list[g][0]['blue']), unsafe_allow_html=True)
 
-tab_main, tab_manual, tab_scan, tab_ticket = st.tabs(["🎰 机选投注", "✍️ 手动投注", "📷 扫票入库", "🧾 我的订单"])
+tab_main, tab_manual, tab_scan, tab_ticket, tab_trend, tab_history = st.tabs(["🎰 机选投注", "✍️ 手动", "📷 扫票", "🧾 订单", "📈 走势", "🏆 历史"])
 
 # ================= Tab 1: 机选投注 =================
 with tab_main:
@@ -194,7 +261,7 @@ with tab_main:
         
         if st.button("🛒 确认购买并入库", type="primary", use_container_width=True):
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
-            records.append({"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": st.session_state.pending_order["cost"], "summary": st.session_state.pending_order["summary"], "prize": 0, "status": "未开奖", "bets": st.session_state.current_batch})
+            records.append({"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": st.session_state.pending_order["cost"], "summary": st.session_state.pending_order["summary"], "prize": 0, "status": "未开奖", "bets": st.session_state.current_batch, "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2)
             st.session_state.current_batch = []; st.success("✅ 订单入库成功！")
 
@@ -204,7 +271,6 @@ with tab_manual:
     m_reds = st.text_input("红球 (空格隔开)", key="m_reds")
     m_blues = st.text_input("蓝球 (空格隔开)", key="m_blues")
     
-    # 动态计算逻辑
     r_list, b_list, t_cost, mode = [], [], 0, "单选"
     try:
         r_list = sorted(list(set(int(x) for x in m_reds.split() if x.isdigit())))
@@ -220,28 +286,28 @@ with tab_manual:
     if st.button("💾 确认生成并入库", type="primary", use_container_width=True):
         if t_cost > 0:
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
-            records.append({"id": generate_order_id(), "game": g, "issue": m_issue.strip(), "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": t_cost, "summary": f"{mode} 1 组 (手动)", "prize": 0, "status": "未开奖", "bets": [{"mode": mode, "red": r_list, "blue": b_list}]})
+            records.append({"id": generate_order_id(), "game": g, "issue": m_issue.strip(), "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": t_cost, "summary": f"{mode} 1 组 (手动)", "prize": 0, "status": "未开奖", "bets": [{"mode": mode, "red": r_list, "blue": b_list}], "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2)
             st.success("✅ 保存成功！")
         else: st.error("号码不完整或有误！")
 
 # ================= Tab 3: 扫票入库 =================
 with tab_scan:
-    st.warning("📱 若要调用手机摄像头，请确保当前是在 HTTPS 协议下访问，或在浏览器中开启不安全网络权限。")
+    st.warning("📱 建议使用手机浏览器打开本页面以调用高清摄像头。")
     img_buffer = st.camera_input("📸 拍下实体彩票即可入库")
     if img_buffer:
         with st.spinner("OCR 深度解析中..."):
             time.sleep(1)
-            r, b = engine.generate_single(1)[0] # 演示数据
+            r, b = engine.generate_single(1)[0]
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
             oid = generate_order_id()
-            records.append({"id": oid, "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": 2, "summary": "单选 1 组 (扫码)", "prize": 0, "status": "未开奖", "bets": [{"mode": "单选", "red": r, "blue": b}]})
+            records.append({"id": oid, "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": 2, "summary": "单选 1 组 (扫码)", "prize": 0, "status": "未开奖", "bets": [{"mode": "单选", "red": r, "blue": b}], "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2)
             st.success(f"✅ 成功扫码入库！新订单: {oid}")
 
 # ================= Tab 4: 订单管理与一键追号 =================
 with tab_ticket:
-    if st.button("🎯 联网核算所有订单奖金", use_container_width=True):
+    if st.button("🎯 联网核算当前彩种奖金", use_container_width=True):
         if os.path.exists(TICKET_FILE):
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8"))
             for order in records:
@@ -261,9 +327,12 @@ with tab_ticket:
             st.success("🎉 核算完成！")
             
     if os.path.exists(TICKET_FILE):
-        records = [r for r in json.load(open(TICKET_FILE, "r", encoding="utf-8")) if r["game"] == g]
+        # 仅筛选属于当前用户的、且对应当前彩种的订单
+        all_records = json.load(open(TICKET_FILE, "r", encoding="utf-8"))
+        records = [r for r in all_records if r["game"] == g and r.get("user", "admin") == st.session_state.current_user]
+        
         t_cost, t_prize = sum(r["total_cost"] for r in records), sum(r.get("prize", 0) for r in records)
-        st.markdown(f"**财务总计 ➔ 投入: {t_cost} | 奖金: {t_prize} | 盈亏: {t_prize - t_cost} 元**")
+        st.markdown(f"**个人财务总计 ➔ 投入: {t_cost} | 奖金: {t_prize} | 盈亏: {t_prize - t_cost} 元**")
         
         for r in reversed(records):
             profit = r.get("prize",0) - r["total_cost"]
@@ -273,11 +342,40 @@ with tab_ticket:
                     if bet["mode"] == "胆拖": st.markdown(render_balls([], bet["blue"], bet["dan"], bet["tuo"]), unsafe_allow_html=True)
                     else: st.markdown(render_balls(bet["red"], bet["blue"]), unsafe_allow_html=True)
                 
-                # Streamlit 下的追号逻辑联动
                 if st.button(f"🚀 一键追买此单 (预购第 {selling_issue[g]} 期)", key=f"chase_{r['id']}", use_container_width=True):
-                    new_order = {"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": r["total_cost"], "summary": r["summary"].split(" (")[0] + " (追号)", "prize": 0, "status": "未开奖", "bets": r["bets"]}
+                    new_order = {"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": r["total_cost"], "summary": r["summary"].split(" (")[0] + " (追号)", "prize": 0, "status": "未开奖", "bets": r["bets"], "user": st.session_state.current_user}
                     all_records = json.load(open(TICKET_FILE, "r", encoding="utf-8"))
                     all_records.append(new_order)
                     with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(all_records, f, ensure_ascii=False, indent=2)
                     st.success(f"追号成功！新单号: {new_order['id']}")
                     time.sleep(1); st.rerun()
+
+# ================= Tab 5: 走势分析 =================
+with tab_trend:
+    st.subheader(f"{g_name} - 近 100 期冷热走势")
+    if not history_dict[g]:
+        st.warning("暂无历史数据，请等待网络拉取完成...")
+    else:
+        r_pool = range(1, 34) if g == "ssq" else range(1, 36)
+        b_pool = range(1, 17) if g == "ssq" else range(1, 13)
+        r_counts, b_counts = {str(i).zfill(2): 0 for i in r_pool}, {str(i).zfill(2): 0 for i in b_pool}
+        
+        for data in history_dict[g].values():
+            for r in data["red"]: r_counts[str(r).zfill(2)] += 1
+            for b in data["blue"]: b_counts[str(b).zfill(2)] += 1
+            
+        st.markdown("**🔴 红球出号频次分布**")
+        st.bar_chart(r_counts)
+        st.markdown("**🔵 蓝球出号频次分布**")
+        st.bar_chart(b_counts)
+
+# ================= Tab 6: 往期开奖 =================
+with tab_history:
+    st.subheader(f"🏆 {g_name} - 官方近 100 期真实开奖记录")
+    if not history_list[g]:
+        st.warning("暂无历史数据，请等待网络拉取完成...")
+    else:
+        for item in history_list[g]:
+            st.markdown(f"**第 {item['issue']} 期**")
+            st.markdown(render_balls(item['red'], item['blue']), unsafe_allow_html=True)
+            st.divider()
