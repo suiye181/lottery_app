@@ -4,7 +4,7 @@ import urllib3
 import streamlit.components.v1 as components
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-st.set_page_config(page_title="智能彩票系统 26.0", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="智能彩票系统 26.1", page_icon="🎰", layout="centered")
 
 # ================= 极简扁平化 CSS 引擎 =================
 st.markdown("""
@@ -12,25 +12,26 @@ st.markdown("""
 .stApp { background-color: #FFFFFF; }
 .block-container { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; max-width: 800px; }
 
-/* 强制多列同行排列（移动端终极防换行），确保方格+按钮全在一行 */
+/* 强制多列同行排列（移动端终极防换行与极限压缩），确保号码格子一屏一行显示完 */
 @media (max-width: 640px) {
     [data-testid="stHorizontalBlock"] {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: center;
-        overflow-x: auto;
+        justify-content: center;
+        overflow: hidden !important;
     }
     [data-testid="column"] {
         width: auto !important;
-        flex: 1 1 auto !important;
-        min-width: 32px !important;
-        padding: 0 3px !important;
+        flex: 1 1 0% !important;
+        min-width: 0px !important;
+        padding: 0 2px !important; /* 极限压缩方格间的间距 */
     }
 }
 
 /* 扁平化标签页 (Tabs) */
 .stTabs [data-baseweb="tab-list"] { gap: 0px; border-bottom: 1px solid #E9ECEF; padding-bottom: 0; }
-.stTabs [data-baseweb="tab"] { background-color: transparent !important; color: #6C757D !important; border: none !important; padding: 10px 15px; font-weight: 500; font-size: 15px;}
+.stTabs [data-baseweb="tab"] { background-color: transparent !important; color: #6C757D !important; border: none !important; padding: 10px 12px; font-weight: 500; font-size: 15px;}
 .stTabs [aria-selected="true"] { color: #FF4B4B !important; border-bottom: 3px solid #FF4B4B !important; font-weight: bold; }
 
 /* 极简按键 */
@@ -38,10 +39,10 @@ st.markdown("""
 .stButton > button:hover { background-color: #E9ECEF !important; }
 .stButton > button[kind="primary"] { background-color: #FF4B4B !important; color: #FFFFFF !important; border: none !important; }
 
-/* 方格定制：刚好放下一个号码 */
-div[data-baseweb="input"], div[data-baseweb="select"] { border-radius: 4px !important; height: 42px; }
-input { text-align: center !important; font-weight: 600 !important; font-size: 15px !important; padding: 0 4px !important; }
-.plus-sign { text-align: center; font-size: 20px; font-weight: bold; color: #ADB5BD; line-height: 42px; }
+/* 方格定制：刚好放下一个号码，紧凑美观 */
+div[data-baseweb="input"], div[data-baseweb="select"] { border-radius: 4px !important; height: 40px; }
+input { text-align: center !important; font-weight: 600 !important; font-size: 15px !important; padding: 0 2px !important; }
+.plus-sign { text-align: center; font-size: 20px; font-weight: bold; color: #ADB5BD; line-height: 40px; margin: 0 -4px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -132,7 +133,7 @@ def fetch_lottery_data():
             if i == 0: si["ssq"] = str(int(code) + 1)
     except: pass
 
-    try: # 大乐透底层拉取修复
+    try: # 大乐透拉取
         items = []
         try:
             r2 = requests.get("https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry?gameNo=85&provinceId=0&pageSize=100&isVerify=1&pageNo=1", headers=h_dlt, verify=False, timeout=5).json()
@@ -220,7 +221,7 @@ if history_list[g]:
 # 统一双字一级导航
 tab_main, tab_manual, tab_scan, tab_ticket, tab_trend, tab_history = st.tabs(["机选", "手动", "扫票", "订单", "走势", "历史"])
 
-# ================= 1. 机选投注 (单行极简版) =================
+# ================= 1. 机选投注 =================
 with tab_main:
     m_t1, m_t2, m_t3 = st.tabs(["单选", "复式", "胆拖"])
     with m_t1:
@@ -280,8 +281,8 @@ with tab_manual:
         all_valid, bets = True, []
         for i in range(st.session_state.man_single_cnt):
             st.markdown(f"<div style='font-size:12px; color:#6C757D; margin-top:5px;'>第 {i+1} 注</div>", unsafe_allow_html=True)
-            # 建立同行格子列，红蓝之间加一列用来放 "+"
-            cols = st.columns([1]*engine.r_need + [0.5] + [1]*engine.b_need)
+            # 建立同行格子列，红蓝之间加一列用来放 "+"。权重 [0.4] 进一步压缩加号占位
+            cols = st.columns([1]*engine.r_need + [0.4] + [1]*engine.b_need)
             r_vals, b_vals = [], []
             for j in range(engine.r_need): 
                 r_vals.append(cols[j].text_input("", key=f"ms_r_{i}_{j}", label_visibility="collapsed", max_chars=2))
@@ -355,7 +356,7 @@ with tab_scan:
             st.success(f"成功入库！单号: {oid}")
 
 with tab_ticket:
-    o_t1, o_t2, o_t3 = st.tabs(["双色", "大乐", "扫票对奖"])
+    o_t1, o_t2, o_t3 = st.tabs(["双色球", "大乐透", "扫票对奖"])
     def render_orders(tgt_g):
         if os.path.exists(TICKET_FILE):
             all_records = json.load(open(TICKET_FILE, "r", encoding="utf-8"))
@@ -376,36 +377,29 @@ with tab_ticket:
     with o_t1: render_orders("ssq")
     with o_t2: render_orders("dlt")
     
-    # 全新 独立功能：扫票秒查中奖状态
     with o_t3:
         st.info("对着买回来的彩票拍个照，自动查中奖金额！")
         check_img = st.camera_input("📸 对准彩票号码拍照")
         if check_img:
             with st.spinner("AI 识别读取中..."):
-                time.sleep(1.5) # 模拟 OCR 耗时
+                time.sleep(1.5) 
                 if not history_list[g]:
                     st.error("官方开奖数据未加载，无法对奖。")
                 else:
-                    # 模拟读取到了上一期的开奖号码来演示中奖逻辑
                     p_issue = history_list[g][0]['issue']
                     win_r, win_b = history_list[g][0]['red'], history_list[g][0]['blue']
-                    
-                    # 模拟识别出来的彩票上的号码 (给点几率强制中奖演示)
                     sim_r, sim_b = engine.generate_single(1)[0]
                     if random.random() > 0.5: sim_b = win_b 
-                    
                     prize = 0
                     for cb in itertools.combinations(sim_b, engine.b_need):
                         prize += eval_prize(g, len(set(sim_r)&set(win_r)), len(set(cb)&set(win_b)))
                     
                     st.markdown(f"**识别出票面期号**: `{p_issue}`")
                     st.markdown(render_balls(sim_r, sim_b), unsafe_allow_html=True)
-                    
                     if prize > 0:
                         st.success(f"🎊 恭喜！这张票中奖了：{prize} 元！")
                         st.balloons()
-                    else:
-                        st.error("💔 很遗憾，这张票没有中奖。")
+                    else: st.error("💔 很遗憾，这张票没有中奖。")
 
 # ================= 5 & 6. 走势与历史查询 =================
 with tab_trend:
@@ -430,7 +424,7 @@ with tab_history:
         else: st.error("未找到数据")
         
     st.markdown("### 📜 往期")
-    h_t1, h_t2 = st.tabs(["双色", "大乐"])
+    h_t1, h_t2 = st.tabs(["双色球", "大乐透"])
     with h_t1:
         for item in history_list["ssq"][:50]:
             st.markdown(f"<div style='font-size:12px; color:#6C757D; text-align:center;'>第 {item['issue']} 期</div>", unsafe_allow_html=True)
