@@ -4,45 +4,58 @@ import urllib3
 import streamlit.components.v1 as components
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-st.set_page_config(page_title="智能彩票系统 26.1", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="智能彩票系统 27.0", page_icon="🎰", layout="centered")
 
 # ================= 极简扁平化 CSS 引擎 =================
 st.markdown("""
 <style>
+/* 页面极限压缩，取消所有多余留白，锁定单页显示 */
 .stApp { background-color: #FFFFFF; }
-.block-container { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; max-width: 800px; }
+.block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; max-width: 800px; }
 
-/* 强制多列同行排列（移动端终极防换行与极限压缩），确保号码格子一屏一行显示完 */
-@media (max-width: 640px) {
-    [data-testid="stHorizontalBlock"] {
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden !important;
-    }
-    [data-testid="column"] {
-        width: auto !important;
-        flex: 1 1 0% !important;
-        min-width: 0px !important;
-        padding: 0 2px !important; /* 极限压缩方格间的间距 */
-    }
-}
+/* 标题完美适配手机，防止看不全 */
+.sys-title { text-align: center; color: #212529; font-size: 1.25rem; font-weight: 800; margin-bottom: 10px; white-space: nowrap; letter-spacing: -0.5px; }
 
-/* 扁平化标签页 (Tabs) */
-.stTabs [data-baseweb="tab-list"] { gap: 0px; border-bottom: 1px solid #E9ECEF; padding-bottom: 0; }
-.stTabs [data-baseweb="tab"] { background-color: transparent !important; color: #6C757D !important; border: none !important; padding: 10px 12px; font-weight: 500; font-size: 15px;}
+/* 顶部分类与游戏选择器强制不换行，防止显示不全 */
+div[role="radiogroup"] { flex-wrap: nowrap !important; justify-content: center; gap: 8px; margin-bottom: 5px;}
+label[data-baseweb="radio"] { padding: 4px 8px !important; margin-right: 0 !important; background: #F8F9FA; border-radius: 6px; white-space: nowrap; }
+.stTabs [data-baseweb="tab-list"] { gap: 0px; border-bottom: 1px solid #E9ECEF; padding-bottom: 0; justify-content: space-around; }
+.stTabs [data-baseweb="tab"] { background-color: transparent !important; color: #6C757D !important; border: none !important; padding: 8px 0px; font-weight: 500; font-size: 14px; white-space: nowrap; flex: 1; text-align: center; }
 .stTabs [aria-selected="true"] { color: #FF4B4B !important; border-bottom: 3px solid #FF4B4B !important; font-weight: bold; }
 
-/* 极简按键 */
-.stButton > button { background-color: #F8F9FA !important; color: #212529 !important; border: 1px solid #DEE2E6 !important; border-radius: 6px !important; height: 42px !important; font-weight: 500 !important; box-shadow: none !important; padding: 0 !important;}
-.stButton > button:hover { background-color: #E9ECEF !important; }
-.stButton > button[kind="primary"] { background-color: #FF4B4B !important; color: #FFFFFF !important; border: none !important; }
+/* 强制多列同行排列（移动端终极防换行），锁定 6个方格+1个方格 */
+[data-testid="stHorizontalBlock"] {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center;
+    gap: 3px !important; 
+    margin-bottom: -5px;
+}
+[data-testid="column"] {
+    width: auto !important;
+    flex: 1 1 0% !important;
+    min-width: 0px !important;
+    padding: 0 !important; 
+}
 
-/* 方格定制：刚好放下一个号码，紧凑美观 */
-div[data-baseweb="input"], div[data-baseweb="select"] { border-radius: 4px !important; height: 40px; }
-input { text-align: center !important; font-weight: 600 !important; font-size: 15px !important; padding: 0 2px !important; }
-.plus-sign { text-align: center; font-size: 20px; font-weight: bold; color: #ADB5BD; line-height: 40px; margin: 0 -4px; }
+/* 显赫方格：重绘输入框为独立的实体小方块 */
+div[data-baseweb="input"] { 
+    border: 1px solid #CED4DA !important; 
+    background-color: #F8F9FA !important; 
+    border-radius: 4px !important; 
+    height: 38px !important; 
+}
+div[data-baseweb="input"]:focus-within { border-color: #FF4B4B !important; background-color: #FFFFFF !important; }
+input { text-align: center !important; font-weight: 700 !important; font-size: 16px !important; padding: 0 !important; color: #212529 !important; }
+.plus-sign { text-align: center; font-size: 20px; font-weight: bold; color: #ADB5BD; line-height: 38px; margin: 0 -2px; }
+
+/* 按钮重构 */
+/* 1. 主操作按钮 (入库) */
+.stButton > button[kind="primary"] { background-color: #FF4B4B !important; color: #FFFFFF !important; border: none !important; height: 42px !important; border-radius: 6px !important; font-weight: bold !important; width: 100%; box-shadow: none !important; margin-top: 10px;}
+.stButton > button[kind="primary"]:hover { background-color: #E53935 !important; }
+/* 2. 重新设计“增加一注”按键 (虚线框扁平设计) */
+.stButton > button[kind="secondary"] { background-color: #FFFFFF !important; color: #6C757D !important; border: 1.5px dashed #CED4DA !important; border-radius: 6px !important; height: 38px !important; font-size: 14px !important; margin-top: 10px; width: 100%; box-shadow: none !important; }
+.stButton > button[kind="secondary"]:hover { border-color: #FF4B4B !important; color: #FF4B4B !important; background-color: #FFF5F5 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -60,16 +73,16 @@ if "logged_in" not in st.session_state: st.session_state.logged_in = False
 if "man_single_cnt" not in st.session_state: st.session_state.man_single_cnt = 1
 
 if not st.session_state.logged_in:
-    st.markdown("<h3 style='text-align: center; color: #212529; margin-bottom: 20px;'>彩票分析与投注系统</h3>", unsafe_allow_html=True)
+    st.markdown("<div class='sys-title'>彩票分析与投注系统</div>", unsafe_allow_html=True)
     t_log, t_reg = st.tabs(["登录", "注册"])
     with t_log:
         u, p = st.text_input("用户名"), st.text_input("密码", type="password")
-        if st.button("登 录", type="primary", use_container_width=True):
+        if st.button("登 录", type="primary"):
             if load_users().get(u) == p: st.session_state.logged_in, st.session_state.current_user = True, u; st.rerun()
             else: st.error("账密错误")
     with t_reg:
         ru, rp1, rp2 = st.text_input("设置用户名"), st.text_input("设置密码", type="password"), st.text_input("确认密码", type="password")
-        if st.button("注 册", use_container_width=True):
+        if st.button("注 册"):
             users = load_users()
             if not ru or not rp1: st.error("不能为空")
             elif ru in users: st.error("已存在")
@@ -81,11 +94,11 @@ with st.sidebar:
     st.markdown(f"**当前用户:** {st.session_state.current_user}")
     with st.expander("修改密码"):
         op, np = st.text_input("原密码", type="password"), st.text_input("新密码", type="password")
-        if st.button("确认修改", use_container_width=True):
+        if st.button("确认修改"):
             users = load_users()
             if users.get(st.session_state.current_user) != op: st.error("原密码错误")
             else: users[st.session_state.current_user] = np; save_users(users); st.success("修改成功")
-    if st.button("退出登录", use_container_width=True): st.session_state.logged_in = False; st.rerun()
+    if st.button("退出登录"): st.session_state.logged_in = False; st.rerun()
 
 class LotteryEngine:
     def __init__(self, game_type="ssq", history=None):
@@ -124,7 +137,7 @@ def fetch_lottery_data():
     h_dlt = {"User-Agent": "Mozilla/5.0", "Referer": "https://static.sporttery.cn/"}
     hd, hl, si = {"ssq": {}, "dlt": {}}, {"ssq": [], "dlt": []}, {"ssq": "加载中", "dlt": "加载中"}
     
-    try: # 双色球拉取
+    try:
         r1 = requests.get("http://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice", params={"name":"ssq","issueCount":"100"}, headers=h_ssq, verify=False, timeout=5).json()
         for i, item in enumerate(r1.get("result", [])):
             if not item.get("red"): continue
@@ -133,7 +146,7 @@ def fetch_lottery_data():
             if i == 0: si["ssq"] = str(int(code) + 1)
     except: pass
 
-    try: # 大乐透拉取
+    try:
         items = []
         try:
             r2 = requests.get("https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry?gameNo=85&provinceId=0&pageSize=100&isVerify=1&pageNo=1", headers=h_dlt, verify=False, timeout=5).json()
@@ -207,15 +220,18 @@ if "current_batch" not in st.session_state: st.session_state.current_batch = []
 if "pending_order" not in st.session_state: st.session_state.pending_order = None
 if "do_scroll" not in st.session_state: st.session_state.do_scroll = False
 
+st.markdown("<div class='sys-title'>彩票分析与投注系统</div>", unsafe_allow_html=True)
 history_dict, history_list, selling_issue = fetch_lottery_data()
-g = st.radio("彩种", ["ssq", "dlt"], format_func=lambda x: "双色球" if x=="ssq" else "大乐透", horizontal=True, label_visibility="collapsed")
+
+# 顶部紧凑游戏选择器
+g = st.radio("彩种", ["ssq", "dlt"], format_func=lambda x: "🔴 双色球" if x=="ssq" else "🔵 大乐透", horizontal=True, label_visibility="collapsed")
 g_name = "双色球" if g == "ssq" else "大乐透"
 engine = LotteryEngine(g, set(tuple(v["red"]) + tuple(v["blue"]) for v in history_dict.get(g, {}).values()))
 r_max = 33 if g == "ssq" else 35
 b_max = 16 if g == "ssq" else 12
 
 if history_list[g]:
-    st.markdown(f"<div style='text-align: center; color: #6C757D; font-size: 13px; margin-bottom: 5px;'>上期开奖 (第 {history_list[g][0]['issue']} 期)</div>", unsafe_allow_html=True)
+    st.markdown(f"<div style='text-align: center; color: #6C757D; font-size: 12px;'>上期开奖 (第 {history_list[g][0]['issue']} 期)</div>", unsafe_allow_html=True)
     st.markdown(render_balls(history_list[g][0]['red'], history_list[g][0]['blue']), unsafe_allow_html=True)
 
 # 统一双字一级导航
@@ -225,29 +241,29 @@ tab_main, tab_manual, tab_scan, tab_ticket, tab_trend, tab_history = st.tabs(["�
 with tab_main:
     m_t1, m_t2, m_t3 = st.tabs(["单选", "复式", "胆拖"])
     with m_t1:
-        st.markdown("<div style='font-size:13px; color:#6C757D;'>注数:</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:12px; color:#6C757D;'>生成注数:</div>", unsafe_allow_html=True)
         c1, c2 = st.columns([3, 2])
         s_count = c1.number_input("注数", 1, 50, 5, label_visibility="collapsed")
-        if c2.button("生成单选", use_container_width=True):
+        if c2.button("生 成"):
             res = engine.generate_single(s_count)
             st.session_state.current_batch = [{"mode": "单选", "red": r, "blue": b} for r, b in res]
             st.session_state.pending_order = {"summary": f"单选 {len(res)}组", "cost": len(res)*2}; st.session_state.do_scroll = True
     with m_t2:
-        st.markdown("<div style='font-size:13px; color:#6C757D;'>红球数 &nbsp;&nbsp;&nbsp;&nbsp; 蓝球数:</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:12px; color:#6C757D;'>红球数 &nbsp;&nbsp;&nbsp;&nbsp; 蓝球数:</div>", unsafe_allow_html=True)
         c1, c2, c3 = st.columns([1.5, 1.5, 2])
         r_c = c1.number_input("红", engine.r_need, 20, engine.r_need+1, label_visibility="collapsed")
         b_c = c2.number_input("蓝", engine.b_need, 16, engine.b_need+1, label_visibility="collapsed")
-        if c3.button("生成复式", use_container_width=True):
+        if c3.button("生 成", key="m2b"):
             r, b, t = engine.generate_multiple(r_c, b_c)
             st.session_state.current_batch = [{"mode": "复式", "red": r, "blue": b}]
             st.session_state.pending_order = {"summary": "复式 1组", "cost": t*2}; st.session_state.do_scroll = True
     with m_t3:
-        st.markdown("<div style='font-size:13px; color:#6C757D;'>红胆码 &nbsp;&nbsp; 红拖数 &nbsp;&nbsp; 蓝球数:</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:12px; color:#6C757D;'>红胆码 &nbsp;&nbsp; 拖码数 &nbsp;&nbsp; 蓝球数:</div>", unsafe_allow_html=True)
         c1, c2, c3, c4 = st.columns([2, 1.5, 1.5, 2])
         dt_dan = c1.text_input("胆", placeholder="空格分", label_visibility="collapsed")
         dt_tuo = c2.number_input("拖", 2, 20, 6, label_visibility="collapsed")
         dt_b = c3.number_input("蓝", engine.b_need, 16, engine.b_need, label_visibility="collapsed")
-        if c4.button("生成胆拖", use_container_width=True):
+        if c4.button("生 成", key="m3b"):
             try:
                 dans = [int(x) for x in dt_dan.split()]
                 dans, tuos, b, t = engine.generate_dantuo(dans, dt_tuo, dt_b)
@@ -256,12 +272,12 @@ with tab_main:
             except: st.error("参数有误")
 
     if st.session_state.current_batch:
-        st.markdown("<hr style='margin:15px 0; border-top:1px solid #E9ECEF;'>", unsafe_allow_html=True)
+        st.markdown("<hr style='margin:10px 0; border-top:1px solid #E9ECEF;'>", unsafe_allow_html=True)
         for bet in st.session_state.current_batch:
             if bet["mode"] == "胆拖": st.markdown(render_balls([], bet["blue"], bet["dan"], bet["tuo"]), unsafe_allow_html=True)
             else: st.markdown(render_balls(bet["red"], bet["blue"]), unsafe_allow_html=True)
-        st.markdown(f"<h3 style='text-align: center; color: #FF4B4B;'>金额: {st.session_state.pending_order['cost']} 元</h3>", unsafe_allow_html=True)
-        if st.button("确认购买并入库", type="primary", use_container_width=True):
+        st.markdown(f"<div style='text-align: center; color: #FF4B4B; font-weight: bold; font-size: 16px;'>总计金额: {st.session_state.pending_order['cost']} 元</div>", unsafe_allow_html=True)
+        if st.button("确认购买入库", type="primary"):
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
             records.append({"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": st.session_state.pending_order["cost"], "summary": st.session_state.pending_order["summary"], "prize": 0, "status": "未开奖", "bets": st.session_state.current_batch, "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2)
@@ -271,18 +287,16 @@ with tab_main:
         components.html("<script>setTimeout(()=>window.parent.document.querySelector('.main').scrollTo({top:9999, behavior:'smooth'}), 100);</script>", height=0)
         st.session_state.do_scroll = False
 
-# ================= 2. 手动投注 (同行方格版 + 号分隔) =================
+# ================= 2. 手动投注 =================
 with tab_manual:
     m_m1, m_m2, m_m3 = st.tabs(["单选", "复式", "胆拖"])
     with m_m1:
-        st.write(f"预购期号: **{selling_issue[g]}**")
-        if st.button("➕ 增加 1 注"): st.session_state.man_single_cnt += 1
+        st.markdown(f"<div style='display:flex; justify-content:space-between; color:#6C757D; font-size:13px; margin-bottom:5px;'><span>期号: {selling_issue[g]}</span></div>", unsafe_allow_html=True)
         
         all_valid, bets = True, []
         for i in range(st.session_state.man_single_cnt):
-            st.markdown(f"<div style='font-size:12px; color:#6C757D; margin-top:5px;'>第 {i+1} 注</div>", unsafe_allow_html=True)
-            # 建立同行格子列，红蓝之间加一列用来放 "+"。权重 [0.4] 进一步压缩加号占位
-            cols = st.columns([1]*engine.r_need + [0.4] + [1]*engine.b_need)
+            # 建立同行格子列，红蓝之间加一列用来放 "+"，权重极小防挤压
+            cols = st.columns([1]*engine.r_need + [0.3] + [1]*engine.b_need)
             r_vals, b_vals = [], []
             for j in range(engine.r_need): 
                 r_vals.append(cols[j].text_input("", key=f"ms_r_{i}_{j}", label_visibility="collapsed", max_chars=2))
@@ -294,22 +308,28 @@ with tab_manual:
             if not r_list and not b_list: continue
             
             err = check_rules(r_list, b_list, engine.r_need, engine.b_need, r_max, b_max, "single")
-            if err: st.error(f"第 {i+1} 注: {err}"); all_valid = False
+            if err: st.error(f"第{i+1}行: {err}"); all_valid = False
             else: bets.append({"mode": "单选", "red": r_list, "blue": b_list})
-                
+        
+        # 全新设计的增加注数按键 (虚线底设计)
+        if st.button("➕ 继续增加一组号码行", type="secondary"): 
+            st.session_state.man_single_cnt += 1
+            st.rerun()
+
         t_cost = len(bets) * 2
-        st.markdown(f"<h3 style='text-align: center; color: #FF4B4B;'>金额: {t_cost} 元</h3>", unsafe_allow_html=True)
-        if st.button("生 成 入 库", type="primary", use_container_width=True):
+        st.markdown(f"<div style='text-align: center; color: #FF4B4B; font-weight:bold; font-size:16px;'>金额: {t_cost} 元</div>", unsafe_allow_html=True)
+        if st.button("生 成 入 库", type="primary"):
             if all_valid and bets:
                 records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
                 records.append({"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": t_cost, "summary": f"单选 {len(bets)}组 (手动)", "prize": 0, "status": "未开奖", "bets": bets, "user": st.session_state.current_user})
                 with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2)
-                st.session_state.man_single_cnt = 1; st.success("保存成功！")
-            elif not bets: st.error("请填满号码！")
+                st.session_state.man_single_cnt = 1; st.success("保存成功！"); st.rerun()
+            elif not bets: st.error("请填满上方号码格！")
                 
     with m_m2:
-        mr2 = st.text_input("复式红球 (空格分隔)", key="mm2_r")
-        mb2 = st.text_input("复式蓝球 (空格分隔)", key="mm2_b")
+        st.markdown("<div style='font-size:12px; color:#6C757D;'>复式红球 (空格分隔) &nbsp; 复式蓝球 (空格分隔)</div>", unsafe_allow_html=True)
+        mr2 = st.text_input("复式红", key="mm2_r", label_visibility="collapsed")
+        mb2 = st.text_input("复式蓝", key="mm2_b", label_visibility="collapsed")
         t_cost_2 = 0
         try:
             rl2 = sorted(list(set(int(x) for x in mr2.split() if x.isdigit())))
@@ -317,16 +337,17 @@ with tab_manual:
             if len(rl2) >= engine.r_need and len(bl2) >= engine.b_need:
                 t_cost_2 = math.comb(len(rl2), engine.r_need) * math.comb(len(bl2), engine.b_need) * 2
         except: pass
-        st.markdown(f"<h3 style='text-align: center; color: #FF4B4B;'>金额: {t_cost_2} 元</h3>", unsafe_allow_html=True)
-        if st.button("复 式 入 库", type="primary", use_container_width=True) and t_cost_2 > 0:
+        st.markdown(f"<div style='text-align: center; color: #FF4B4B; font-weight:bold;'>金额: {t_cost_2} 元</div>", unsafe_allow_html=True)
+        if st.button("复 式 入 库", type="primary") and t_cost_2 > 0:
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
             records.append({"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": t_cost_2, "summary": f"复式 1组 (手动)", "prize": 0, "status": "未开奖", "bets": [{"mode": "复式", "red": rl2, "blue": bl2}], "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2); st.success("保存成功！")
                 
     with m_m3:
-        md_d = st.text_input("红胆 (空格分隔)")
-        md_t = st.text_input("红拖 (空格分隔)")
-        md_b = st.text_input("蓝球 (空格分隔)")
+        st.markdown("<div style='font-size:12px; color:#6C757D;'>红胆 &nbsp; 红拖 &nbsp; 蓝球 (空格分隔)</div>", unsafe_allow_html=True)
+        md_d = st.text_input("红胆", label_visibility="collapsed")
+        md_t = st.text_input("红拖", label_visibility="collapsed")
+        md_b = st.text_input("蓝球", label_visibility="collapsed")
         t_cost_3 = 0
         try:
             dl = sorted(list(set(int(x) for x in md_d.split() if x.isdigit())))
@@ -335,34 +356,34 @@ with tab_manual:
             if 1 <= len(dl) < engine.r_need and len(dl) + len(tl) >= engine.r_need and len(bl3) >= engine.b_need and not (set(dl) & set(tl)):
                 t_cost_3 = math.comb(len(tl), engine.r_need - len(dl)) * math.comb(len(bl3), engine.b_need) * 2
         except: pass
-        st.markdown(f"<h3 style='text-align: center; color: #FF4B4B;'>金额: {t_cost_3} 元</h3>", unsafe_allow_html=True)
-        if st.button("胆 拖 入 库", type="primary", use_container_width=True) and t_cost_3 > 0:
+        st.markdown(f"<div style='text-align: center; color: #FF4B4B; font-weight:bold;'>金额: {t_cost_3} 元</div>", unsafe_allow_html=True)
+        if st.button("胆 拖 入 库", type="primary") and t_cost_3 > 0:
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
             records.append({"id": generate_order_id(), "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": t_cost_3, "summary": f"胆拖 1组 (手动)", "prize": 0, "status": "未开奖", "bets": [{"mode": "胆拖", "dan": dl, "tuo": tl, "blue": bl3}], "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2); st.success("保存成功！")
 
 # ================= 3 & 4. 扫票与订单扫码查奖 =================
 with tab_scan:
-    st.info("拍下实体彩票即可入库 (需 HTTPS 唤起摄像头)")
+    st.info("拍下彩票即可入库 (需HTTPS)")
     img_buffer = st.camera_input("📸 入库扫码")
     if img_buffer:
-        with st.spinner("OCR 解析中..."):
+        with st.spinner("解析中..."):
             time.sleep(1)
             r, b = engine.generate_single(1)[0]
             records = json.load(open(TICKET_FILE, "r", encoding="utf-8")) if os.path.exists(TICKET_FILE) else []
             oid = generate_order_id()
             records.append({"id": oid, "game": g, "issue": selling_issue[g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": 2, "summary": "单选 1组 (扫票)", "prize": 0, "status": "未开奖", "bets": [{"mode": "单选", "red": r, "blue": b}], "user": st.session_state.current_user})
             with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(records, f, ensure_ascii=False, indent=2)
-            st.success(f"成功入库！单号: {oid}")
+            st.success(f"入库成功！单号: {oid}")
 
 with tab_ticket:
-    o_t1, o_t2, o_t3 = st.tabs(["双色球", "大乐透", "扫票对奖"])
+    o_t1, o_t2, o_t3 = st.tabs(["双色球", "大乐透", "扫票查奖"])
     def render_orders(tgt_g):
         if os.path.exists(TICKET_FILE):
             all_records = json.load(open(TICKET_FILE, "r", encoding="utf-8"))
             records = [r for r in all_records if r["game"] == tgt_g and r.get("user", "admin") == st.session_state.current_user]
             t_cost, t_prize = sum(r["total_cost"] for r in records), sum(r.get("prize", 0) for r in records)
-            st.markdown(f"<div style='text-align:center; font-size:14px; margin-bottom:10px;'>投入 {t_cost} | 奖金 {t_prize} | 盈亏 <b style='color:#FF4B4B;'>{t_prize - t_cost}</b></div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='text-align:center; font-size:13px; margin-bottom:10px;'>投入 {t_cost} | 奖金 {t_prize} | 盈亏 <b style='color:#FF4B4B;'>{t_prize - t_cost}</b></div>", unsafe_allow_html=True)
             for r in reversed(records):
                 profit = r.get("prize",0) - r["total_cost"]
                 with st.expander(f"{'✅' if r['status']=='已中奖' else '⏳'} {r['issue']}期 | 投入 {r['total_cost']} 盈亏 {profit}"):
@@ -372,19 +393,17 @@ with tab_ticket:
                         else: st.markdown(render_balls(bet["red"], bet["blue"]), unsafe_allow_html=True)
                     if st.button("一键追买", key=f"c_{r['id']}", use_container_width=True):
                         all_records.append({"id": generate_order_id(), "game": tgt_g, "issue": selling_issue[tgt_g], "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"), "total_cost": r["total_cost"], "summary": r["summary"].split(" (")[0] + " (追号)", "prize": 0, "status": "未开奖", "bets": r["bets"], "user": st.session_state.current_user})
-                        with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(all_records, f, ensure_ascii=False, indent=2)
-                        st.success("追号成功！"); time.sleep(0.5); st.rerun()
+                        with open(TICKET_FILE, "w", encoding="utf-8") as f: json.dump(all_records, f, ensure_ascii=False, indent=2); st.success("追号成功！"); time.sleep(0.5); st.rerun()
     with o_t1: render_orders("ssq")
     with o_t2: render_orders("dlt")
     
     with o_t3:
-        st.info("对着买回来的彩票拍个照，自动查中奖金额！")
-        check_img = st.camera_input("📸 对准彩票号码拍照")
+        check_img = st.camera_input("📸 对准彩票拍照查奖")
         if check_img:
             with st.spinner("AI 识别读取中..."):
                 time.sleep(1.5) 
                 if not history_list[g]:
-                    st.error("官方开奖数据未加载，无法对奖。")
+                    st.error("官方数据未加载，无法对奖。")
                 else:
                     p_issue = history_list[g][0]['issue']
                     win_r, win_b = history_list[g][0]['red'], history_list[g][0]['blue']
@@ -394,16 +413,16 @@ with tab_ticket:
                     for cb in itertools.combinations(sim_b, engine.b_need):
                         prize += eval_prize(g, len(set(sim_r)&set(win_r)), len(set(cb)&set(win_b)))
                     
-                    st.markdown(f"**识别出票面期号**: `{p_issue}`")
+                    st.markdown(f"**识别出期号**: `{p_issue}`")
                     st.markdown(render_balls(sim_r, sim_b), unsafe_allow_html=True)
                     if prize > 0:
                         st.success(f"🎊 恭喜！这张票中奖了：{prize} 元！")
                         st.balloons()
-                    else: st.error("💔 很遗憾，这张票没有中奖。")
+                    else: st.error("💔 很遗憾，没有中奖。")
 
 # ================= 5 & 6. 走势与历史查询 =================
 with tab_trend:
-    if not history_dict[g]: st.warning("数据拉取中...")
+    if not history_dict[g]: st.warning("拉取中...")
     else:
         r_pool, b_pool = (range(1, 34), range(1, 17)) if g == "ssq" else (range(1, 36), range(1, 13))
         r_counts, b_counts = {str(i).zfill(2): 0 for i in r_pool}, {str(i).zfill(2): 0 for i in b_pool}
@@ -416,7 +435,7 @@ with tab_trend:
 with tab_history:
     st.markdown("### 🔍 查询")
     qc1, qc2 = st.columns([3, 1])
-    q_iss = qc1.text_input("输入期号查开奖", label_visibility="collapsed", placeholder="输入期号查开奖")
+    q_iss = qc1.text_input("查期号", label_visibility="collapsed", placeholder="如: 2024001")
     if qc2.button("查询", use_container_width=True):
         if q_iss in history_dict[g]:
             st.success(f"第 {q_iss} 期 {g_name}：")
