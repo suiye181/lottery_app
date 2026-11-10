@@ -4,7 +4,7 @@ import urllib3
 import streamlit.components.v1 as components
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-st.set_page_config(page_title="智能彩票系统 27.0", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="智能彩票系统 27.1", page_icon="🎰", layout="centered")
 
 # ================= 极简扁平化 CSS 引擎 =================
 st.markdown("""
@@ -23,12 +23,12 @@ label[data-baseweb="radio"] { padding: 4px 8px !important; margin-right: 0 !impo
 .stTabs [data-baseweb="tab"] { background-color: transparent !important; color: #6C757D !important; border: none !important; padding: 8px 0px; font-weight: 500; font-size: 14px; white-space: nowrap; flex: 1; text-align: center; }
 .stTabs [aria-selected="true"] { color: #FF4B4B !important; border-bottom: 3px solid #FF4B4B !important; font-weight: bold; }
 
-/* 强制多列同行排列（移动端终极防换行），锁定 6个方格+1个方格 */
+/* 强制多列同行排列（极限榨取像素防换行） */
 [data-testid="stHorizontalBlock"] {
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center;
-    gap: 3px !important; 
+    gap: 2px !important; /* 缩小列间距 */
     margin-bottom: -5px;
 }
 [data-testid="column"] {
@@ -38,22 +38,20 @@ label[data-baseweb="radio"] { padding: 4px 8px !important; margin-right: 0 !impo
     padding: 0 !important; 
 }
 
-/* 显赫方格：重绘输入框为独立的实体小方块 */
+/* 显赫方格：进一步缩小尺寸，确保窄屏手机完美单行 */
 div[data-baseweb="input"] { 
     border: 1px solid #CED4DA !important; 
     background-color: #F8F9FA !important; 
     border-radius: 4px !important; 
-    height: 38px !important; 
+    height: 34px !important; /* 缩小高度 */
 }
 div[data-baseweb="input"]:focus-within { border-color: #FF4B4B !important; background-color: #FFFFFF !important; }
-input { text-align: center !important; font-weight: 700 !important; font-size: 16px !important; padding: 0 !important; color: #212529 !important; }
-.plus-sign { text-align: center; font-size: 20px; font-weight: bold; color: #ADB5BD; line-height: 38px; margin: 0 -2px; }
+input { text-align: center !important; font-weight: 700 !important; font-size: 14px !important; padding: 0 !important; color: #212529 !important; }
+.plus-sign { text-align: center; font-size: 18px; font-weight: bold; color: #ADB5BD; line-height: 34px; margin: 0 -5px; } /* 负边距极限压缩+号 */
 
 /* 按钮重构 */
-/* 1. 主操作按钮 (入库) */
 .stButton > button[kind="primary"] { background-color: #FF4B4B !important; color: #FFFFFF !important; border: none !important; height: 42px !important; border-radius: 6px !important; font-weight: bold !important; width: 100%; box-shadow: none !important; margin-top: 10px;}
 .stButton > button[kind="primary"]:hover { background-color: #E53935 !important; }
-/* 2. 重新设计“增加一注”按键 (虚线框扁平设计) */
 .stButton > button[kind="secondary"] { background-color: #FFFFFF !important; color: #6C757D !important; border: 1.5px dashed #CED4DA !important; border-radius: 6px !important; height: 38px !important; font-size: 14px !important; margin-top: 10px; width: 100%; box-shadow: none !important; }
 .stButton > button[kind="secondary"]:hover { border-color: #FF4B4B !important; color: #FF4B4B !important; background-color: #FFF5F5 !important; }
 </style>
@@ -295,8 +293,9 @@ with tab_manual:
         
         all_valid, bets = True, []
         for i in range(st.session_state.man_single_cnt):
-            # 建立同行格子列，红蓝之间加一列用来放 "+"，权重极小防挤压
-            cols = st.columns([1]*engine.r_need + [0.3] + [1]*engine.b_need)
+            st.markdown(f"<div style='font-size:12px; color:#6C757D; margin-top:5px;'>第 {i+1} 注</div>", unsafe_allow_html=True)
+            # 建立同行格子列，将 + 号列权重极度压缩为 0.15 防挤占空间
+            cols = st.columns([1]*engine.r_need + [0.15] + [1]*engine.b_need)
             r_vals, b_vals = [], []
             for j in range(engine.r_need): 
                 r_vals.append(cols[j].text_input("", key=f"ms_r_{i}_{j}", label_visibility="collapsed", max_chars=2))
@@ -311,8 +310,8 @@ with tab_manual:
             if err: st.error(f"第{i+1}行: {err}"); all_valid = False
             else: bets.append({"mode": "单选", "red": r_list, "blue": b_list})
         
-        # 全新设计的增加注数按键 (虚线底设计)
-        if st.button("➕ 继续增加一组号码行", type="secondary"): 
+        # 极简按钮文案
+        if st.button("➕ 增加号码", type="secondary"): 
             st.session_state.man_single_cnt += 1
             st.rerun()
 
