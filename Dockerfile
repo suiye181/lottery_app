@@ -8,4 +8,5 @@ COPY lottery_web.py ./
 EXPOSE 5888
 
 # 核心：精准读取 /app/ssl 目录下的 fullchain.pem 和 privkey.pem
-CMD ["streamlit", "run", "lottery_web.py", "--server.port=5888", "--server.address=0.0.0.0", "--server.sslCertFile=/app/ssl/fullchain.pem", "--server.sslKeyFile=/app/ssl/privkey.pem"]
+# 将末尾的 CMD 替换为：
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "5888"]
