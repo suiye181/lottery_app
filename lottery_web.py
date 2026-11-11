@@ -4,50 +4,60 @@ import urllib3
 import streamlit.components.v1 as components
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-st.set_page_config(page_title="智能彩票系统 27.1", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="智能彩票系统 28.0", page_icon="🎰", layout="centered")
 
 # ================= 极简扁平化 CSS 引擎 =================
 st.markdown("""
 <style>
-/* 页面极限压缩，取消所有多余留白，锁定单页显示 */
 .stApp { background-color: #FFFFFF; }
-.block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; max-width: 800px; }
+.block-container { padding-top: 1rem !important; padding-bottom: 1rem !important; max-width: 800px; overflow-x: hidden !important;}
 
-/* 标题完美适配手机，防止看不全 */
+/* 标题完美适配手机 */
 .sys-title { text-align: center; color: #212529; font-size: 1.25rem; font-weight: 800; margin-bottom: 10px; white-space: nowrap; letter-spacing: -0.5px; }
 
-/* 顶部分类与游戏选择器强制不换行，防止显示不全 */
+/* 顶部分类与游戏选择器 */
 div[role="radiogroup"] { flex-wrap: nowrap !important; justify-content: center; gap: 8px; margin-bottom: 5px;}
 label[data-baseweb="radio"] { padding: 4px 8px !important; margin-right: 0 !important; background: #F8F9FA; border-radius: 6px; white-space: nowrap; }
 .stTabs [data-baseweb="tab-list"] { gap: 0px; border-bottom: 1px solid #E9ECEF; padding-bottom: 0; justify-content: space-around; }
 .stTabs [data-baseweb="tab"] { background-color: transparent !important; color: #6C757D !important; border: none !important; padding: 8px 0px; font-weight: 500; font-size: 14px; white-space: nowrap; flex: 1; text-align: center; }
 .stTabs [aria-selected="true"] { color: #FF4B4B !important; border-bottom: 3px solid #FF4B4B !important; font-weight: bold; }
 
-/* 强制多列同行排列（极限榨取像素防换行） */
+/* 🔴 核心修复：彻底干掉手机端横向滚动，强行剥夺 input 的最小宽度 */
 [data-testid="stHorizontalBlock"] {
+    display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center;
-    gap: 2px !important; /* 缩小列间距 */
+    justify-content: center;
+    width: 100% !important;
+    gap: 3px !important; 
     margin-bottom: -5px;
 }
 [data-testid="column"] {
-    width: auto !important;
-    flex: 1 1 0% !important;
-    min-width: 0px !important;
+    flex: 1 1 0px !important;
+    min-width: 0px !important; /* 关键：突破组件原生限制 */
+    width: 0px !important; 
     padding: 0 !important; 
 }
-
-/* 显赫方格：进一步缩小尺寸，确保窄屏手机完美单行 */
 div[data-baseweb="input"] { 
+    min-width: 0px !important; /* 关键：强制输入框容器可压缩 */
+    width: 100% !important;
     border: 1px solid #CED4DA !important; 
     background-color: #F8F9FA !important; 
     border-radius: 4px !important; 
-    height: 34px !important; /* 缩小高度 */
+    height: 38px !important; 
 }
 div[data-baseweb="input"]:focus-within { border-color: #FF4B4B !important; background-color: #FFFFFF !important; }
-input { text-align: center !important; font-weight: 700 !important; font-size: 14px !important; padding: 0 !important; color: #212529 !important; }
-.plus-sign { text-align: center; font-size: 18px; font-weight: bold; color: #ADB5BD; line-height: 34px; margin: 0 -5px; } /* 负边距极限压缩+号 */
+input { 
+    min-width: 0px !important; /* 关键：强制 input 原生标签可压缩 */
+    width: 100% !important;
+    text-align: center !important; 
+    font-weight: 700 !important; 
+    font-size: 16px !important; 
+    padding: 0 !important; 
+    color: #212529 !important; 
+}
+.plus-sign { text-align: center; font-size: 20px; font-weight: bold; color: #ADB5BD; line-height: 38px; }
 
 /* 按钮重构 */
 .stButton > button[kind="primary"] { background-color: #FF4B4B !important; color: #FFFFFF !important; border: none !important; height: 42px !important; border-radius: 6px !important; font-weight: bold !important; width: 100%; box-shadow: none !important; margin-top: 10px;}
@@ -294,12 +304,17 @@ with tab_manual:
         all_valid, bets = True, []
         for i in range(st.session_state.man_single_cnt):
             st.markdown(f"<div style='font-size:12px; color:#6C757D; margin-top:5px;'>第 {i+1} 注</div>", unsafe_allow_html=True)
-            # 建立同行格子列，将 + 号列权重极度压缩为 0.15 防挤占空间
-            cols = st.columns([1]*engine.r_need + [0.15] + [1]*engine.b_need)
+            
+            # 使用整数权重，防止浮点数引发 flex 布局异常。10代表普通方格，2代表加号位。
+            weights = [10] * engine.r_need + [2] + [10] * engine.b_need
+            cols = st.columns(weights)
+            
             r_vals, b_vals = [], []
             for j in range(engine.r_need): 
                 r_vals.append(cols[j].text_input("", key=f"ms_r_{i}_{j}", label_visibility="collapsed", max_chars=2))
+                
             cols[engine.r_need].markdown("<div class='plus-sign'>+</div>", unsafe_allow_html=True)
+            
             for k in range(engine.b_need): 
                 b_vals.append(cols[engine.r_need + 1 + k].text_input("", key=f"ms_b_{i}_{k}", label_visibility="collapsed", max_chars=2))
             
@@ -310,7 +325,7 @@ with tab_manual:
             if err: st.error(f"第{i+1}行: {err}"); all_valid = False
             else: bets.append({"mode": "单选", "red": r_list, "blue": b_list})
         
-        # 极简按钮文案
+        # 极简虚线按钮
         if st.button("➕ 增加号码", type="secondary"): 
             st.session_state.man_single_cnt += 1
             st.rerun()
